@@ -1,0 +1,53 @@
+version: "3.1"
+services:
+  app:
+    image: scoremaxten 
+    container_name: scoremaxten_php
+    build: 
+      context: .
+      dockerfile: .
+    restart: "no"
+    ports:
+     
+      - 8000:8000
+    volumes:
+      - ./:/var/www/html
+      - ./php/local.ini:/usr/local/etc/php/conf.d/local.ini
+    networks:
+      - scoremaxten
+
+    command: "php artisan serve --host=0.0.0.0 --port=8000"
+
+   
+
+  db:
+    image: mysql:latest
+    container_name: mysql_db_scoremaxten
+    restart: "no"
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+    volumes:
+      - db_data_scoremaxten:/docker-entrypoint-initdb.d
+      - db_data_scoremaxten:/var/lib/mysql
+    networks:
+      - scoremaxten
+   
+  
+  phpmyadmin:
+    image: phpmyadmin:5.2.0-apache
+    restart: "no"
+    ports:
+      - 8080:80
+    environment:
+      - PMA_ARBITRARY=1
+    networks:
+      - scoremaxten
+
+
+networks:
+  scoremaxten:
+    driver: bridge
+
+
+volumes:
+  db_data_scoremaxten:
