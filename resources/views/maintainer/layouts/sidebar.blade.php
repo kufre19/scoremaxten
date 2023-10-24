@@ -18,6 +18,13 @@
                 </li>
 
                 <li>
+                    <a href="{{ route('maintainer.allProperty') }}">
+                        <i class="ri-building-line"></i>
+                        <span>{{ __('Properties') }}</span>
+                    </a>
+                </li>
+
+                <li>
                     <a href="{{ route('maintainer.information.index') }}">
                         <i class="ri-folder-info-line"></i>
                         <span>{{ __('Information') }}</span>

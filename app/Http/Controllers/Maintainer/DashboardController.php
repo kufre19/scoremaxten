@@ -7,10 +7,17 @@ use App\Models\NoticeBoard;
 use App\Models\Notification;
 use App\Models\Property;
 use App\Models\Ticket;
+use App\Services\PropertyService;
 use Illuminate\Http\Request;
 
 class DashboardController extends Controller
 {
+    public $propertyService;
+
+    public function __construct()
+    {
+        $this->propertyService = new PropertyService;
+    }
     public function dashboard()
     {
         $data['pageTitle'] = __('Dashboard');
@@ -35,5 +42,30 @@ class DashboardController extends Controller
             })
             ->update(['is_seen' => ACTIVE]);
         return view('maintainer.notification')->with($data);
+    }
+
+    public function allProperty(Request $request)
+    {
+        $data['pageTitle'] = __("All Property");
+        $data['navPropertyMMShowClass'] = 'mm-show';
+        $data['subNavAllPropertyMMActiveClass'] = 'mm-active';
+        $data['subNavAllPropertyActiveClass'] = 'active';
+        $data['properties'] = $this->propertyService->getAllForLandlord();
+        if ($request->ajax()) {
+            return $this->propertyService->getAllDataForLandlord();
+        }
+        return view('maintainer.property.all-property-list')->with($data);
+    }
+
+    
+    public function showProperty($id)
+    {
+        $data['pageTitle'] = __("Property Details");
+        $data['navPropertyMMShowClass'] = 'mm-show';
+        $data['subNavAllPropertyMMActiveClass'] = 'mm-active';
+        $data['subNavAllPropertyActiveClass'] = 'active';
+        $data['property'] = $this->propertyService->getDetailsByIdForLandLord($id);
+        $data['units'] = $this->propertyService->getUnitsByPropertyId($id)->getData()->data;
+        return view('maintainer.property.show')->with($data);
     }
 }

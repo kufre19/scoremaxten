@@ -30,6 +30,58 @@ class PropertyService
         return $data?->makeHidden(['updated_at', 'created_at', 'deleted_at']);
     }
 
+    public function getAllForLandlord()
+    {
+        $data = Property::query()
+            ->leftJoin('tenants', ['properties.id' => 'tenants.property_id', 'tenants.status' => (DB::raw(TENANT_STATUS_ACTIVE))])
+            ->leftJoin('users', function ($q) {
+                $q->on('tenants.user_id', 'users.id')->whereNull('users.deleted_at');
+            })
+            ->selectRaw('properties.number_of_unit - (COUNT(users.id)) as available_unit,properties.*')
+            ->groupBy('properties.id')
+            ->where('properties.maintainer_id', auth()->id())
+            ->get();
+        return $data?->makeHidden(['updated_at', 'created_at', 'deleted_at']);
+    }
+    
+    public function getAllDataForLandlord()
+    {
+        $properties = $this->getAll();
+
+        return datatables($properties)
+            ->addIndexColumn()
+            ->addColumn('image', function ($property) {
+                return  ' <img src="' . $property->thumbnail_image . '"
+                class="rounded-circle avatar-md tbl-user-image"
+                alt="">';
+            })
+            ->addColumn('name', function ($property) {
+                return  $property->name;
+            })
+            ->addColumn('address', function ($property) {
+                return  $property->propertyDetail?->address;
+            })
+            ->addColumn('unit', function ($property) {
+                return  $property->number_of_unit;
+            })
+            ->addColumn('rooms', function ($property) {
+                return propertyTotalRoom($property->id);
+            })
+            ->addColumn('available', function ($property) {
+                return $property->available_unit;
+            })
+
+            ->addColumn('action', function ($property) {
+                return '<div class="tbl-action-btns d-inline-flex">
+                            <a type="button" class="p-1 tbl-action-btn" href="' . route('owner.property.edit', $property->id) . '" title="' . __('Edit') . '"><span class="iconify" data-icon="clarity:note-edit-solid"></span></a>
+                            <a type="button" class="p-1 tbl-action-btn" href="' . route('owner.property.show', $property->id) . '" title="' . __('View') . '"><span class="iconify" data-icon="carbon:view-filled"></span></a>
+                            <button onclick="deleteItem(\'' . route('owner.property.delete', $property->id) . '\', \'allDataTable\')" class="p-1 tbl-action-btn"   title="' . __('Delete') . '"><span class="iconify" data-icon="ep:delete-filled"></span></button>
+                        </div>';
+            })
+            ->rawColumns(['name', 'address', 'unit', 'rooms', 'image', 'available', 'action'])
+            ->make(true);
+    }
+
     public function getAllData()
     {
         $properties = $this->getAll();
@@ -100,6 +152,19 @@ class PropertyService
     public function getById($id)
     {
         return Property::where('owner_user_id', auth()->id())->findOrFail($id);
+    }
+
+    public function getDetailsByIdForLandLord($id)
+    {
+        $data = Property::query()
+            ->leftJoin('property_details', 'properties.id', '=', 'property_details.property_id')
+            ->leftJoin('users', 'properties.maintainer_id', '=', 'users.id')
+            ->leftJoin('tenants', ['properties.id' => 'tenants.property_id', 'tenants.status' => (DB::raw(TENANT_STATUS_ACTIVE))])
+            ->selectRaw('properties.number_of_unit - (COUNT(tenants.id)) as available_unit, (avg(tenants.general_rent)) as avg_general_rent,sum(tenants.security_deposit) as total_security_deposit,sum(tenants.late_fee) as total_late_fee,properties.*, property_details.lease_amount, property_details.lease_start_date, property_details.lease_end_date, property_details.country_id, property_details.state_id, property_details.city_id, property_details.zip_code, property_details.address, property_details.map_link,users.first_name,users.last_name')
+            ->groupBy('properties.id')
+            ->where('properties.maintainer_id', auth()->id())
+            ->findOrFail($id);
+        return $data?->makeHidden(['updated_at', 'created_at', 'deleted_at']);
     }
 
     public function getDetailsById($id)

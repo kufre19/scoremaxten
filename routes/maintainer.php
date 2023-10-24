@@ -11,6 +11,11 @@ Route::group(['prefix' => 'maintainer', 'as' => 'maintainer.', 'middleware' => [
     Route::get('/', [DashboardController::class, 'dashboard'])->name('dashboard');
     Route::get('notification', [DashboardController::class, 'notification'])->name('notification');
 
+    Route::get('all-property', [DashboardController::class, 'allProperty'])->name('allProperty');
+    Route::get('show/{id}', [DashboardController::class, 'showProperty'])->name('showProperty');
+
+
+
     Route::group(['prefix' => 'information', 'as' => 'information.'], function () {
         Route::get('/', [InformationController::class, 'index'])->name('index');
         Route::get('get-info', [InformationController::class, 'getInfo'])->name('get.info'); // ajax
